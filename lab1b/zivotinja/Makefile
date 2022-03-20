@@ -4,9 +4,9 @@ VAR1 = 1
 VAR2 = 1
 CFLAGS += -D VAR1=$(VAR1) -D VAR2=$(VAR2)
 
-OBJEKTI = vau.o 
-MODULI = pudlica/mod-pudlica.o 
-MODUL = mod-pas.o
+OBJEKTI = ziv.o
+MODULI = macka/mod-macka.o pas/mod-pas.o 
+MODUL = mod-zivotinja.o
 
 $(MODUL): $(OBJEKTI) $(MODULI)
 	$(LD) -r $^ $(LDFLAGS) -o $@ 
@@ -22,5 +22,6 @@ $(MODULI):
 # brisanje
 .PHONY: brisi
 brisi:
-	$(MAKE) -C pudlica brisi
+	$(MAKE) -C macka brisi
+	$(MAKE) -C pas brisi
 	rm -f $(OBJEKTI) $(MODUL)
