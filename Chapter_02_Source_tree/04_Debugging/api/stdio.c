@@ -34,6 +34,16 @@ int printf(char *format, ...)
 	return u_stdout->print(text);
 }
 
+int puts(char *format, ...)
+{
+	char text[CONSOLE_MAXLEN];
+
+	vssprintf(text, CONSOLE_MAXLEN, &format);
+	
+
+	return u_stdout->print(text);
+}
+
 /*! Formated output to error console */
 void warn(char *format, ...)
 {
