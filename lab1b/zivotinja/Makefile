@@ -1,7 +1,6 @@
 include $(POCETNI_DIREKTORIJ)/config.ini
 
-VAR1 = 1
-VAR2 = 1
+
 CFLAGS += -D VAR1=$(VAR1) -D VAR2=$(VAR2)
 
 OBJEKTI = ziv.o

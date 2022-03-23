@@ -4,7 +4,7 @@ VAR1 = 1
 VAR2 = 1
 CFLAGS += -D VAR1=$(VAR1) -D VAR2=$(VAR2)
 
-OBJEKTI = vau.o 
+OBJEKTI = vau.o grr.o
 MODULI = pudlica/mod-pudlica.o 
 MODUL = mod-pas.o
 
