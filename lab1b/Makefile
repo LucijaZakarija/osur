@@ -31,3 +31,6 @@ brisi:
 
 	rm -f $(OBJEKTI) $(PROGRAM)
 
+.PHONY: pokreni
+pokreni:  $(PROGRAM)
+	./main
