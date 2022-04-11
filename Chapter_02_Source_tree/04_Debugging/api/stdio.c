@@ -41,7 +41,9 @@ int puts(char *format, ...)
 	vssprintf(text, CONSOLE_MAXLEN, &format);
 	
 
-	return u_stdout->print(text);
+	 u_stdout->print(text);
+	 u_stdout->print("\n");
+	return 0;
 }
 
 /*! Formated output to error console */
