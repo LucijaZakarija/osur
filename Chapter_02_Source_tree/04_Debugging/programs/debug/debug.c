@@ -11,7 +11,8 @@ static int inc(int n)
 
 	return n;
 }
-
+int x = 5;
+int y[100];
 int debug()
 {
 	int a, b, c;
@@ -34,6 +35,8 @@ int debug()
 #if 1	/* compile with 'debug=yes' and without */
 	LOG(WARN, "This is log entry with WARN relevance");
 	LOG(INFO, "Address of 'a' is %x", &a);
+	LOG(INFO, "Address of 'x' is %x", &x );
+	LOG(INFO, "Address of 'y' is %x", y ); //dodaj jos xxxx
 
 	ASSERT_ERRNO_AND_RETURN(TRUE, EINVAL);
 
