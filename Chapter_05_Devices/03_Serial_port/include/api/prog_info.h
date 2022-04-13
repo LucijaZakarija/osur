@@ -5,6 +5,7 @@
 
 /* "programs" */
 int hello_world();
+int demo();
 int timer();
 int keyboard();
 int segm_fault();

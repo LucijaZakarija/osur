@@ -75,8 +75,39 @@ void *ffs_alloc(ffs_mpool_t *mpool, size_t size)
 	while (iter != NULL && iter->size < size)
 		iter = iter->next;
 
-	if (iter == NULL)
+	if (iter == NULL) {  //PROMJENA
+		printf("Nema free chunka pocinje spajanje\n");
+		/* join with right? */
+		ffs_hdr_t *after;
+		iter = mpool->first;
+		while (iter != NULL && iter->size < size) {
+		 after = GET_AFTER(iter);
+		 while (CHECK_FREE(after) && iter->size < size)
+		 {
+		 	printf("Spajam %x i %x\n",iter,after);
+			ffs_remove_chunk(mpool, after);
+			iter->size += after->size; 
+			after = GET_AFTER(iter);
+			 if (iter->size >= size) {
+		 //printf("Dovoljna velicina nakon spajanja %x\n",iter);
+		 break;
+		 }
+		 }
+		 if (iter->size >= size) {
+		 printf("Dovoljna velicina nakon spajanja za chunk %x\n",iter);
+		 break;
+		 }
+		 iter = iter->next;
+		}
+	
+		
+		
+		}
+		
+		if (iter == NULL) {
+		printf("Nema free chunka nakon spajanja :(\n");
 		return NULL; /* no adequate free chunk found */
+		}
 
 	if (iter->size >= size + HEADER_SIZE)
 	{
@@ -96,6 +127,7 @@ void *ffs_alloc(ffs_mpool_t *mpool, size_t size)
 	}
 
 	MARK_USED(chunk);
+	//printf("Velicina bloka prvaq:%d\n",chunk->size);
 	CLONE_SIZE_TO_TAIL(chunk);
 
 	return ((void *) chunk) + sizeof(size_t);
@@ -109,36 +141,39 @@ void *ffs_alloc(ffs_mpool_t *mpool, size_t size)
  */
 int ffs_free(ffs_mpool_t *mpool, void *chunk_to_be_freed)
 {
-	ffs_hdr_t *chunk, *before, *after;
 
-	ASSERT(mpool && chunk_to_be_freed);
+	ffs_hdr_t *chunk;
+	// *before, *after;
+
+	ASSERT(mpool && chunk_to_be_freed); //ERROR
 
 	chunk = chunk_to_be_freed - sizeof(size_t);
-	ASSERT(CHECK_USED(chunk));
 
+	ASSERT(CHECK_USED(chunk));
+	printf("Velicina bloka prije free:%d\n",chunk->size);
 	MARK_FREE(chunk); /* mark it as free */
 
 	/* join with left? */
-	before = ((void *) chunk) - sizeof(size_t);
-	if (CHECK_FREE(before))
+	//before = ((void *) chunk) - sizeof(size_t);
+	/*if (CHECK_FREE(before))
 	{
 		before = GET_HDR(before);
 		ffs_remove_chunk(mpool, before);
-		before->size += chunk->size; /* join */
+		before->size += chunk->size; 
 		chunk = before;
-	}
+	}*/
 
 	/* join with right? */
-	after = GET_AFTER(chunk);
-	if (CHECK_FREE(after))
+	//after = GET_AFTER(chunk);
+	/*if (CHECK_FREE(after))
 	{
 		ffs_remove_chunk(mpool, after);
-		chunk->size += after->size; /* join */
-	}
+		chunk->size += after->size; 
+	}*/
 
 	/* insert chunk in free list */
 	ffs_insert_chunk(mpool, chunk);
-
+	printf("Velicina bloka nakon free:%d\n",chunk->size);
 	/* set chunk tail */
 	CLONE_SIZE_TO_TAIL(chunk);
 
