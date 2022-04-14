@@ -5,22 +5,35 @@
 ENTRY(arch_startup)
 
 SECTIONS {
-	.code LOAD_ADDR :
+	.text LOAD_ADDR :
 	{
 		kernel_code_addr = .;
 
 		/* instructions */
 		*?/boot/startup.asm.o ( .text* )
-
 		*( .text* )
+
 	}
-	.data :
+	
+	
+		.rodata :
+	{
+		kernel_rodata_addr = .;
+
+		/* read only data (constants), initialized global variables */
+		* (.rodata* )
+	}
+	
+	
+		.data :
 	{
 		kernel_data_addr = .;
 
 		/* read only data (constants), initialized global variables */
-		* ( .rodata* .data* )
+		* ( .data*)
 	}
+	
+
 	.bss :
 	{
 		*( .bss* COMMON* )
