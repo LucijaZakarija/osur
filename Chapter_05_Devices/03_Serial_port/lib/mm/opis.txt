@@ -1,0 +1,2 @@
+napravljen 2.zad
+3.zad odredena adresa, dodan if u free i ispisi, nije napisan demo(ali je u pripremi)

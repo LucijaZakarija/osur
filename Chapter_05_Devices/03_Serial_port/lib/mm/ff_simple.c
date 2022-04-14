@@ -13,8 +13,12 @@
  * \param size Memory pool size
  * \return memory pool descriptor
 */
+
+void addres=0;
+
 void *ffs_init(void *mem_segm, size_t size)
-{
+{       
+        addres=*mem_segm+size/3;
 	size_t start, end;
 	ffs_hdr_t *chunk, *border;
 	ffs_mpool_t *mpool;
@@ -77,7 +81,7 @@ void *ffs_alloc(ffs_mpool_t *mpool, size_t size)
 
 	if (iter == NULL)
 		return NULL; /* no adequate free chunk found */
-
+        
 	if (iter->size >= size + HEADER_SIZE)
 	{
 		/* split chunk */
@@ -119,6 +123,10 @@ int ffs_free(ffs_mpool_t *mpool, void *chunk_to_be_freed)
 	MARK_FREE(chunk); /* mark it as free */
 
 	/* join with left? */
+	if (chunk>=addres) { //samo u slucaju da je adresa veca od prve trecine radi ovo
+	
+	printf("Trenutno se nalazim u ostatku memorije, radim spjanje\n");
+	
 	before = ((void *) chunk) - sizeof(size_t);
 	if (CHECK_FREE(before))
 	{
@@ -135,7 +143,10 @@ int ffs_free(ffs_mpool_t *mpool, void *chunk_to_be_freed)
 		ffs_remove_chunk(mpool, after);
 		chunk->size += after->size; /* join */
 	}
-
+        } else {
+        printf("Trenutno se nalazim u prvoj trecini memorije\n");
+        }
+        //uvijek ovo napravi
 	/* insert chunk in free list */
 	ffs_insert_chunk(mpool, chunk);
 
