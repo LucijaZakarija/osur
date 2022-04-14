@@ -37,6 +37,10 @@ int debug()
 	LOG(INFO, "Address of 'a' is %x", &a);
 	LOG(INFO, "Address of 'x' is %x", &x );
 	LOG(INFO, "Address of 'y' is %x", y ); //dodaj jos xxxx
+	LOG ( INFO, "Address of 'debug' is %x", debug );
+	extern int xxxx;
+	LOG ( INFO, "Value of 'xxxx' is %x", xxxx );
+	LOG ( INFO, "Address of 'xxxx' is %x", &xxxx );
 
 	ASSERT_ERRNO_AND_RETURN(TRUE, EINVAL);
 

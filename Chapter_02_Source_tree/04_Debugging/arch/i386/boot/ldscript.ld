@@ -27,6 +27,7 @@ SECTIONS {
 	size_i = SIZEOF(.instrukcije);
 	nakon_instrukcija = nakon_koda + size_i;
 	data_start = RAM_START + size_i;
+	xxxx = 0x10000;
 
 	.data data_start : AT(nakon_instrukcija)
 	{
