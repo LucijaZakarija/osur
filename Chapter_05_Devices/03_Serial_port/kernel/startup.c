@@ -59,7 +59,7 @@ void k_startup()
 	hello_world();
 	keyboard();
 	timer();
-	/* segm_fault(); */
+	/* segm_fault(); */ //OVO JE NJIHOVA VERZIJA, VIDI PRVO NJU!!
 
 	kprintf("\nSystem halted!\n");
 	halt();
