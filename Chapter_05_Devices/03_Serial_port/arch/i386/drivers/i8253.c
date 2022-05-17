@@ -98,7 +98,7 @@ static void i8253_disable_interrupt()
 /*! Register function for counter interrupts */
 static void i8253_register_interrupt(void *handler)
 {
-	arch_register_interrupt_handler(IRQ_TIMER, handler, &i8253);
+	arch_register_interrupt_handler(IRQ_TIMER, handler, &i8253, 3); //dodan broj bzvz
 }
 
 #endif /* I8253 */

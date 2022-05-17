@@ -2,11 +2,59 @@
 
 #include <stdio.h>
 #include <api/prog_info.h>
-
+#include <api/malloc.h>
+#include <arch/interrupt.h>
+#include <arch/processor.h>
 /* detect memory faults(qemu do not detect segment violations!) */
+
+
+static volatile int pon=0;
+
+static void test2(uint irqn)
+{
+	printf("Interrupt handler routine5: irqn=%d\n", irqn);
+}
+
+
+static void test1(uint irqn)
+{
+pon++;
+	printf("Interrupt handler routine start: irqn=%d\n", irqn);
+	if(pon<2) {
+	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,3);
+	raise_interrupt(SOFTWARE_INTERRUPT);
+	}
+	printf("Interrupt handler routine end: irqn=%d\n", irqn);
+}
 
 int segm_fault()
 {
+
+
+	printf("\nInterrupt test >>>\n");
+
+	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test1,NULL,1);
+	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,5);
+
+	raise_interrupt(SOFTWARE_INTERRUPT);
+
+	printf("Interrupt test <<<\n\n");
+	
+
+	void *ptr1, *ptr2;
+
+	ptr1 = malloc(1023);
+	printf("malloc returned %x(1023)\n", ptr1);
+
+	ptr2 = malloc(123);
+	printf("malloc returned %x(123)\n", ptr2);
+
+	if (ptr1)
+		free(ptr1);
+	if (ptr2)
+		free(ptr2);
+		
+		
 	unsigned int *p;
 	unsigned int i, j=0;
 

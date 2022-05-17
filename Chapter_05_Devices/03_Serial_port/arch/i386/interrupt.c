@@ -28,7 +28,7 @@ struct ihndlr
 struct zahtjev //DODAN
 {
 	struct ihndlr *handler;
-	bool obrada_u_tijeku;
+	int obrada_u_tijeku;
 
 	list_h list;
 };
@@ -86,6 +86,7 @@ void arch_register_interrupt_handler(unsigned int inum, void *handler, //DODANO
 				       void *device, int prio)
 {
 	struct ihndlr *ih;
+	LOG(ERROR, "Interrupt!\n", inum);
 
 	if (inum < INTERRUPTS)
 	{
@@ -130,20 +131,24 @@ void arch_unregister_interrupt_handler(unsigned int irq_num, void *handler,
 /*!
  * "Forward" interrupt handling to registered handler
  * (called from interrupts.S)
+ 
+ 
  */
+ 
+ /*
 void arch_interrupt_handler(int irq_num)
 {
 	struct ihndlr *ih;
 
 	if (irq_num < INTERRUPTS && (ih = list_get(&ihandlers[irq_num], FIRST)))
 	{
-		/* enable interrupts on PIC immediately since program may not
-		 * return here immediately */
-		if (icdev->at_exit)
-			icdev->at_exit(irq_num);
+		// enable interrupts on PIC immediately since program may not
+		 // return here immediately */
+		/*if (icdev->at_exit)
+			icdev->at_exit(irq_num); */
 
 		/* Call registered handlers */
-		while (ih)
+		/*while (ih)
 		{
 			ih->ihandler(irq_num, ih->device);
 
@@ -161,24 +166,25 @@ void arch_interrupt_handler(int irq_num)
 		LOG(ERROR, "Unregistered interrupt: %d !\n", irq_num);
 		halt();
 	}
-}
-int gt_int(struct zahtjev *a, struct zahtjev *b)
-{
-    if (a->handler->prio - b->handler->prio >= 0)
+} */
+int gt_int(void *a, void *b) {
+	struct zahtjev* zah1=(struct zahtjev*) a;
+	struct zahtjev* zah2=(struct zahtjev*) b;
+	
+    if (zah1->handler->prio - zah2->handler->prio >= 0)
     {
         // printf("ovo je veci %d, a ovo manji %d\n",*(int*)a,*(int*)b );
         return 1;
     }
-    else
-    {
-        return -1;
-    }
+
+        return -1;  
 }
 
 
 void arch_interrupt_handler(int irq_num)
 {
 	struct ihndlr *ih;
+	LOG(ERROR, "interrupt AAAA: %d\n",irq_num);
 
 	if (irq_num < INTERRUPTS && (ih = list_get (&ihandlers[irq_num], FIRST)))
 	{
@@ -186,17 +192,18 @@ void arch_interrupt_handler(int irq_num)
 			icdev->at_exit(irq_num);
 		while (ih)
 		{
+		LOG(ERROR, "interrupt BBB: %d\n",ih->prio);
 			//ih->ihandler(irq_num, ih->device); 
 			/* umjesto poziva stvoriti objekt zahtjev i dodati ga u listu */
 			struct zahtjev *zah;
 			zah = kmalloc(sizeof(struct zahtjev));
 			zah->handler=ih; //ok?? ili pokazivac??
-			zah->obrada_u_tijeku=FALSE;
+			zah->obrada_u_tijeku=0;
 			//sto je njima lista?
 			//list_t *list;
-			list_init(list); //ili pokazivac??, ugl ne kontam bas jer on je otvarao masu lista
-			list_append(list,zah); //je li ovako??
-			list_sort_add(&zahtjevi[irq_num], zah, &zah->list,list_sort_add);
+			list_init(zahtjevi); //ili pokazivac??, ugl ne kontam bas jer on je otvarao masu lista
+			//list_append(list,zah); //je li ovako??
+			list_sort_add(&zahtjevi[irq_num], zah, &zah->list,gt_int);
 					
 		        //ASSERT(zah); //ali gdje?????
 
@@ -205,13 +212,14 @@ void arch_interrupt_handler(int irq_num)
 
 		/* dodati obradu prema prioritetima (skica ispod) */
 		struct zahtjev *prvi = list_get(&zahtjevi[irq_num], FIRST);//samo dohvati ne i makni,
-                while( prvi != NULL && prvi.obrada_u_tijeku == FALSE ) {
-			prvi.obrada_u_tijeku = TRUE
+                while( prvi != NULL && prvi->obrada_u_tijeku == 0) {
+			prvi->obrada_u_tijeku = 1;
 			arch_irq_enable(irq_num); //nz
+			LOG(ERROR, "interrupt CCC: %d\n",prvi->handler->prio);
 			prvi->handler->ihandler(irq_num, prvi->handler->device); //obradi(prvi), nz je li ok?
 			arch_irq_disable(irq_num); 
-			list_remove(&zahtjevi[irq_num], FIRST, &zahtjevi->list);
-			kfree(prvi)
+			list_remove(&zahtjevi[irq_num], FIRST, &prvi->list);
+			kfree(prvi);
 			prvi = list_get(&zahtjevi[irq_num], FIRST); //treba li ovdje pokazivac??
 		}
 

@@ -66,6 +66,7 @@ kdevice_t *k_device_add(device_t *dev)
 int k_device_init(kdevice_t *kdev, int flags, void *params, void *callback)
 {
 	int retval = 0;
+	int prio=3;
 
 	ASSERT(kdev);
 
@@ -84,7 +85,7 @@ int k_device_init(kdevice_t *kdev, int flags, void *params, void *callback)
 	{
 		(void) arch_register_interrupt_handler(kdev->dev.irq_num,
 							 k_device_interrupt_handler,
-							 kdev);
+							 kdev,prio); //DODANO
 		arch_irq_enable(kdev->dev.irq_num);
 	}
 

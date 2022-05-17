@@ -36,8 +36,8 @@ void k_startup()
 	arch_init_interrupts();
 
 	/* detect memory faults(qemu do not detect segment violations!) */
-	arch_register_interrupt_handler(INT_MEM_FAULT, k_memory_fault, NULL);
-	arch_register_interrupt_handler(INT_UNDEF_FAULT, k_memory_fault, NULL);
+	arch_register_interrupt_handler(INT_MEM_FAULT, k_memory_fault, NULL,7); //DODAN
+	arch_register_interrupt_handler(INT_UNDEF_FAULT, k_memory_fault, NULL,8); //DODAN
 
 	/* timer subsystem */
 	k_time_init();
@@ -57,9 +57,9 @@ void k_startup()
 
 	/* start desired program(s) */
 	hello_world();
-	keyboard();
-	timer();
-	/* segm_fault(); */ //OVO JE NJIHOVA VERZIJA, VIDI PRVO NJU!!
+	//keyboard();
+	//timer();
+	 segm_fault();  //OVO JE NJIHOVA VERZIJA, VIDI PRVO NJU!!
 
 	kprintf("\nSystem halted!\n");
 	halt();
