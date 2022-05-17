@@ -14,6 +14,7 @@ static arch_ic_t *icdev = &IC_DEV;
 
 /*! interrupt handlers */
 static list_t ihandlers[INTERRUPTS];
+static list_t zahtjevi[INTERRUPTS]; //DODANO
 
 struct ihndlr
 {
@@ -29,7 +30,7 @@ struct zahtjev //DODAN
 	struct ihndlr *handler;
 	bool obrada_u_tijeku;
 
-	//list_h list;
+	list_h list;
 };
 
 
@@ -42,6 +43,8 @@ void arch_init_interrupts()
 
 	for (i = 0; i < INTERRUPTS; i++)
 		list_init(&ihandlers[i]);
+		
+
 }
 
 /*!
@@ -57,7 +60,7 @@ void arch_irq_disable(unsigned int irq)
 	icdev->disable_irq(irq);
 }
 
-/*! Register handler function for particular interrupt number */ MAKNUTO
+/*! Register handler function for particular interrupt number */ //MAKNUTO
 /*void arch_register_interrupt_handler(unsigned int inum, void *handler,
 				       void *device)
 {
@@ -103,7 +106,7 @@ void arch_register_interrupt_handler(unsigned int inum, void *handler, //DODANO
 
 //void arch_register_interrupt_handler(unsigned int inum, void *handler, void *device, int prio) TODO
 
-/*! Unregister handler function for particular interrupt number */
+/*! Unregister handler function for particular interrupt number */ //ZASAD NISTA
 void arch_unregister_interrupt_handler(unsigned int irq_num, void *handler,
 					 void *device)
 {
@@ -159,7 +162,18 @@ void arch_interrupt_handler(int irq_num)
 		halt();
 	}
 }
-
+int gt_int(struct zahtjev *a, struct zahtjev *b)
+{
+    if (a->handler->prio - b->handler->prio >= 0)
+    {
+        // printf("ovo je veci %d, a ovo manji %d\n",*(int*)a,*(int*)b );
+        return 1;
+    }
+    else
+    {
+        return -1;
+    }
+}
 
 
 void arch_interrupt_handler(int irq_num)
@@ -179,9 +193,10 @@ void arch_interrupt_handler(int irq_num)
 			zah->handler=ih; //ok?? ili pokazivac??
 			zah->obrada_u_tijeku=FALSE;
 			//sto je njima lista?
-			list_t *list;
-			list_init(list); //ili pokazivac
+			//list_t *list;
+			list_init(list); //ili pokazivac??, ugl ne kontam bas jer on je otvarao masu lista
 			list_append(list,zah); //je li ovako??
+			list_sort_add(&zahtjevi[irq_num], zah, &zah->list,list_sort_add);
 					
 		        //ASSERT(zah); //ali gdje?????
 
@@ -189,15 +204,15 @@ void arch_interrupt_handler(int irq_num)
 		}
 
 		/* dodati obradu prema prioritetima (skica ispod) */
-		prvi = dohvati_prvi_iz_liste(zahtjevi) //samo dohvati ne i makni,
+		struct zahtjev *prvi = list_get(&zahtjevi[irq_num], FIRST);//samo dohvati ne i makni,
                 while( prvi != NULL && prvi.obrada_u_tijeku == FALSE ) {
-		prvi.obrada_u_tijeku = TRUE
-		arch_irq_enable(irq_num); //nz
-		obradi(prvi)
-		arch_irq_disable(irq_num); 
-		makni prvi opisnik iz liste
-		kfree(prvi)
-		prvi = dohvati_prvi_iz_liste(zahtjevi)
+			prvi.obrada_u_tijeku = TRUE
+			arch_irq_enable(irq_num); //nz
+			prvi->handler->ihandler(irq_num, prvi->handler->device); //obradi(prvi), nz je li ok?
+			arch_irq_disable(irq_num); 
+			list_remove(&zahtjevi[irq_num], FIRST, &zahtjevi->list);
+			kfree(prvi)
+			prvi = list_get(&zahtjevi[irq_num], FIRST); //treba li ovdje pokazivac??
 		}
 
 /* izlaskom iz petlje su ili sve obrade gotove ili se povratkom
