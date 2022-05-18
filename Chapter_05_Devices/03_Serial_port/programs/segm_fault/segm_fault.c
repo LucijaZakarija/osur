@@ -14,17 +14,24 @@ static void test2(uint irqn)
 {
 	printf("Interrupt handler routine5: irqn=%d\n", irqn);
 }
+static void test3(uint irqn)
+{
+	printf("Interrupt handler routine3: irqn=%d\n", irqn);
+}
 
 
 static void test1(uint irqn)
 {
 pon++;
-	printf("Interrupt handler routine start: irqn=%d\n", irqn);
+	printf("Interrupt handler routine start1: irqn=%d\n", irqn);
 	if(pon<2) {
-	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,3);
+	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test3,NULL,3);
+	//arch_register_interrupt_handler(INT_MEM_FAULT, test3,NULL,4);
+	//raise_interrupt(INT_MEM_FAULT);
+	//raise_interrupt(INT_UNDEF_FAULT);
 	raise_interrupt(SOFTWARE_INTERRUPT);
 	}
-	printf("Interrupt handler routine end: irqn=%d\n", irqn);
+	printf("Interrupt handler routine end1: irqn=%d\n", irqn);
 }
 
 int segm_fault()
@@ -35,6 +42,7 @@ int segm_fault()
 
 	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test1,NULL,1);
 	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,5);
+	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,4);
 
 	raise_interrupt(SOFTWARE_INTERRUPT);
 
