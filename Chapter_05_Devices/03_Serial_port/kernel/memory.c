@@ -186,6 +186,7 @@ void k_memory_info()
 /*! Handle memory fault interrupt(and others undefined) */
 void k_memory_fault()
 {
+printf("Memory fault\n");
 	LOG(ERROR, "Undefined fault(exception)!!!");
 	halt();
 }

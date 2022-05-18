@@ -27,7 +27,7 @@ pon++;
 	if(pon<2) {
 	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test3,NULL,3);
 	//arch_register_interrupt_handler(INT_MEM_FAULT, test3,NULL,4);
-	//raise_interrupt(INT_MEM_FAULT);
+	
 	//raise_interrupt(INT_UNDEF_FAULT);
 	raise_interrupt(SOFTWARE_INTERRUPT);
 	}
@@ -45,6 +45,7 @@ int segm_fault()
 	arch_register_interrupt_handler(SOFTWARE_INTERRUPT, test2,NULL,4);
 
 	raise_interrupt(SOFTWARE_INTERRUPT);
+	//raise_interrupt(INT_MEM_FAULT);
 
 	printf("Interrupt test <<<\n\n");
 	
