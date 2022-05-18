@@ -1,0 +1,555 @@
+diff --git a/Chapter_05_Devices/03_Serial_port/arch/i386/config.ini b/Chapter_05_Devices/03_Serial_port/arch/i386/config.ini
+index 1b50ef5..f0b9347 100644
+--- a/Chapter_05_Devices/03_Serial_port/arch/i386/config.ini
++++ b/Chapter_05_Devices/03_Serial_port/arch/i386/config.ini
+@@ -24,10 +24,10 @@ OPTIONALS =
+ # Devices
+ #------------------------------------------------------------------------------
+ #"defines" (which device drivers to compile)
+-DEVICES = VGA_TEXT I8042 I8259 I8253 UART
++DEVICES = VGA_TEXT I8042 I8259 I8253 UART DISK
+ 
+ #devices interface (variables implementing device_t interface)
+-DEVICES_DEV = dev_null vga_text_dev uart_com1 i8042_dev
++DEVICES_DEV = dev_null vga_text_dev uart_com1 i8042_dev disk
+ 
+ #interrupt controller device
+ IC_DEV = i8259
+diff --git a/Chapter_05_Devices/03_Serial_port/arch/i386/drivers/disk.c b/Chapter_05_Devices/03_Serial_port/arch/i386/drivers/disk.c
+new file mode 100644
+index 0000000..f1fe096
+--- /dev/null
++++ b/Chapter_05_Devices/03_Serial_port/arch/i386/drivers/disk.c
+@@ -0,0 +1,85 @@
++#ifdef DISK
++
++#include <arch/device.h>
++#include <kernel/memory.h>
++#include <kernel/errno.h>
++#include <lib/string.h>
++
++#define BLOCK_SIZE	512
++#define BLOCKS		4096
++
++static int init(uint flags, void *params, device_t *dev);
++static int destroy(uint flags, void *params, device_t *dev);
++static int send(void *data, size_t size, uint flags, device_t *dev);
++static int recv(void *data, size_t size, uint flags, device_t *dev);
++
++device_t disk = (device_t)
++{
++	.dev_name =	"DISK",
++	.irq_num = 	-1,
++	.irq_handler =	NULL,
++
++	.init =		init,
++	.destroy =	destroy,
++	.send =		send,
++	.recv =		recv,
++	.status =	NULL,
++
++	.flags = 	0,
++	.params = 	NULL
++};
++
++
++static int init(uint flags, void *params, device_t *dev)
++{
++	ASSERT_AND_RETURN_ERRNO(dev->params == NULL, -EINVAL);
++
++	dev->params = kmalloc(BLOCK_SIZE * BLOCKS);
++
++	ASSERT_AND_RETURN_ERRNO(dev->params != NULL, -ENOMEM);
++
++	memset(dev->params, 0, BLOCK_SIZE * BLOCKS);
++
++	return 0;
++}
++
++static int destroy(uint flags, void *params, device_t *dev)
++{
++	ASSERT_AND_RETURN_ERRNO(dev->params != NULL, -EINVAL);
++
++	kfree(dev->params);
++
++	return 0;
++}
++
++/* size: 16+16 bitova = prvi blok | broj blokova */
++static int send(void *data, size_t size, uint flags, device_t *dev)
++{
++	size_t start = size >> 16;
++	size_t count = size & 0xffff;
++
++	ASSERT_AND_RETURN_ERRNO(dev->params != NULL, -EINVAL);
++	ASSERT_AND_RETURN_ERRNO(size > 0, -EINVAL);
++	ASSERT_AND_RETURN_ERRNO(start + count < BLOCKS, -EINVAL);
++
++	memcpy(dev->params + start * BLOCK_SIZE, data, count * BLOCK_SIZE);
++
++	return count * BLOCK_SIZE;
++}
++
++/* size: 16+16 bitova = prvi blok | broj blokova */
++static int recv(void *data, size_t size, uint flags, device_t *dev)
++{
++	size_t start = size >> 16;
++	size_t count = size & 0xffff;
++
++	ASSERT_AND_RETURN_ERRNO(dev->params != NULL, -EINVAL);
++	ASSERT_AND_RETURN_ERRNO(size > 0, -EINVAL);
++	ASSERT_AND_RETURN_ERRNO(start + count < BLOCKS, -EINVAL);
++
++	memcpy(data, dev->params + start * BLOCK_SIZE, count * BLOCK_SIZE);
++
++	return count * BLOCK_SIZE;
++}
++
++#endif /* DISK */
+diff --git a/Chapter_05_Devices/03_Serial_port/include/types/io.h b/Chapter_05_Devices/03_Serial_port/include/types/io.h
+index 8180255..30de344 100644
+--- a/Chapter_05_Devices/03_Serial_port/include/types/io.h
++++ b/Chapter_05_Devices/03_Serial_port/include/types/io.h
+@@ -26,7 +26,7 @@
+ #define O_NONBLOCK		(1 << 2)
+ #define O_RDONLY		(1 << 3)
+ #define O_WRONLY		(1 << 4)
+-#define O_RDWR			(O_RDONLY | O_WRONLY)
++#define O_RDWR			(1 << 5)
+ 
+ #define DEV_OPEN		(1 << 28)
+ #define DEV_TYPE_SHARED		(1 << 28)
+diff --git a/Chapter_05_Devices/03_Serial_port/kernel/device.c b/Chapter_05_Devices/03_Serial_port/kernel/device.c
+index 1f036d6..faf6a38 100644
+--- a/Chapter_05_Devices/03_Serial_port/kernel/device.c
++++ b/Chapter_05_Devices/03_Serial_port/kernel/device.c
+@@ -2,6 +2,7 @@
+ #define _K_DEVICE_C_
+ 
+ #include "device.h"
++#include "fs.h"
+ 
+ #include <kernel/errno.h> /* shares errno with arch layer */
+ #include "memory.h"
+@@ -250,6 +251,15 @@ int sys__open(char *pathname, int flags, mode_t mode, descriptor_t *desc)
+ 	ASSERT_ERRNO_AND_EXIT(pathname, EINVAL);
+ 	ASSERT_ERRNO_AND_EXIT(desc, EINVAL);
+ 
++	if (strstr(pathname, "file:") == pathname) {
++		int retval = k_fs_open_file(pathname, flags, mode, desc);
++		if (retval >= 0)
++			SYS_EXIT(EXIT_SUCCESS, retval);
++		else
++			SYS_EXIT(-retval, -1);
++	}
++	//else
++
+ 	kdev = k_device_open(pathname, flags);
+ 
+ 	if (!kdev)
+@@ -279,6 +289,15 @@ int sys__close(descriptor_t *desc)
+ 
+ 	ASSERT_ERRNO_AND_EXIT(desc, EINVAL);
+ 
++	if (k_fs_is_file_open(desc) == 0) {
++		int retval = k_fs_close_file(desc);
++		if (retval == 0)
++			SYS_EXIT(EXIT_SUCCESS, retval);
++		else
++			SYS_EXIT(-retval, -1);
++	}
++	//else
++
+ 	kobj = desc->ptr;
+ 	ASSERT_ERRNO_AND_EXIT(kobj, EINVAL);
+ 	ASSERT_ERRNO_AND_EXIT(list_find(&kobjects, &kobj->list),
+@@ -317,6 +336,15 @@ static int read_write(descriptor_t *desc, void *buffer, size_t size, int op)
+ 
+ 	ASSERT_ERRNO_AND_EXIT(desc && buffer && size > 0, EINVAL);
+ 
++	if (k_fs_is_file_open(desc) == 0) {
++		int retval = k_fs_read_write(desc, buffer, size, op);
++		if (retval > 0)
++			SYS_EXIT(EXIT_SUCCESS, retval);
++		else
++			SYS_EXIT(EXIT_FAILURE, retval);
++	}
++	//else
++
+ 	kobj = desc->ptr;
+ 	ASSERT_ERRNO_AND_EXIT(kobj, EINVAL);
+ 	ASSERT_ERRNO_AND_EXIT(list_find(&kobjects, &kobj->list),
+@@ -346,6 +374,9 @@ int sys__device_status(descriptor_t *desc, int flags)
+ 	SYS_ENTRY();
+ 
+ 	ASSERT_ERRNO_AND_EXIT(desc, EINVAL);
++	if (k_fs_is_file_open(desc) == 0)
++		SYS_EXIT(EXIT_SUCCESS, rflags);
++	//else
+ 
+ 	kobj = desc->ptr;
+ 	ASSERT_ERRNO_AND_EXIT(kobj, EINVAL);
+diff --git a/Chapter_05_Devices/03_Serial_port/kernel/fs.c b/Chapter_05_Devices/03_Serial_port/kernel/fs.c
+new file mode 100644
+index 0000000..7d8c5fc
+--- /dev/null
++++ b/Chapter_05_Devices/03_Serial_port/kernel/fs.c
+@@ -0,0 +1,246 @@
++#define _K_FS_C_
++
++#include <kernel/errno.h>
++#include <kernel/memory.h>
++#include <types/io.h>
++#include <lib/list.h>
++#include <lib/string.h>
++#include "fs.h"
++#include "device.h"
++#include "time.h"
++#include "memory.h"
++
++static kdevice_t *disk;
++#define DISK_WRITE(buffer, blocks, first_block) \
++k_device_send(buffer, (first_block << 16) | blocks, 0, disk);
++
++#define DISK_READ(buffer, blocks, first_block) \
++k_device_recv(buffer, (first_block << 16) | blocks, 0, disk);
++
++static struct fs_table *ft;
++static size_t ft_size;
++static struct kfile_desc *last_check;
++static list_t open_files;
++
++int k_fs_init(char *disk_device, size_t bsize, size_t blocks)
++{
++	disk = k_device_open ( disk_device, 0 );
++	assert(disk);
++
++	//initialize disk
++	ft_size = sizeof(struct fs_table) + blocks;
++	ft_size = (ft_size + bsize - 1) / bsize;
++	ft = kmalloc(ft_size * bsize);
++	memset(ft, 0, ft_size * bsize);
++	ft->file_system_type = FS_TYPE;
++	strcpy(ft->partition_name, disk_device);
++	ft->block_size = bsize;
++	ft->blocks = blocks;
++	ft->max_files = MAXFILESONDISK;
++
++	int i;
++	for (i = ft_size; i < ft->blocks; i++)
++		ft->free[i] = 1;
++
++	DISK_WRITE(ft, ft_size, 0);
++
++	list_init(&open_files);
++
++	last_check = NULL;
++
++	return 0;
++}
++
++int k_fs_is_file_open(descriptor_t *desc)
++{
++	kobject_t *kobj;
++
++	kobj = desc->ptr;
++	if (kobj && list_find(&kobjects, &kobj->list) &&
++		(kobj->flags & KTYPE_FILE) != 0)
++	{
++		struct kfile_desc *fd = kobj->kobject;
++		if (fd && fd->id == desc->id &&
++			list_find(&open_files, &fd->list))
++		{
++			last_check = fd;
++			return 0;
++		}
++	}
++
++	return -1;
++}
++
++int k_fs_open_file(char *pathname, int flags, mode_t mode, descriptor_t *desc)
++{
++	struct fs_node *tfd = NULL;
++	char *fname = &pathname[5];
++
++	//check for conflicting flags
++	if (	((flags & O_RDONLY) && (flags & O_WRONLY)) ||
++		((flags & O_RDONLY) && (flags & O_RDWR))   ||
++		((flags & O_WRONLY) && (flags & O_RDWR))
++	)
++		return -EINVAL;
++
++	//check if file already open
++	struct kfile_desc *fd = list_get(&open_files, FIRST);
++	while (fd != NULL) {
++		if (strcmp(fd->tfd->node_name, fname) == 0) {
++			//already open!
++			//if its open for reading and O_RDONLY is set in flags
++			if ((fd->flags & O_RDONLY) == (flags & O_RDONLY))
++				tfd = fd->tfd;//fine, save pointer to descriptor
++			else
++				return -EADDRINUSE; //not fine
++
++		}
++		fd = list_get_next(&fd->list);
++	}
++
++	if (!tfd) {
++		//not already open; check if such file exists in file table
++		int i;
++		for (i = 0; i < ft->max_files; i++) {
++			if (strcmp(ft->fd[i].node_name, fname) == 0) {
++				tfd = &ft->fd[i];
++				break;
++			}
++		}
++	}
++
++	if (!tfd) {
++		//file doesn't exitst
++		if ((flags & (O_CREAT | O_WRONLY)) == 0)
++			return -EINVAL;
++
++		//create fs_node in fs_table
++		//1. find unused descriptor
++		int i;
++		for (i = 0; i < ft->max_files; i++) {
++			if (ft->fd[i].node_name[0] == 0) {
++				tfd = &ft->fd[i];
++				break;
++			}
++		}
++		if (!tfd)
++			return -ENFILE;
++
++		//2. initialize descriptor
++		strcpy(tfd->node_name, fname);
++		tfd->id = i;
++		timespec_t t;
++		kclock_gettime (CLOCK_REALTIME, &t);
++		tfd->tc = tfd->ta = tfd->tm = t;
++		tfd->size = 0;
++		tfd->blocks = 0;
++	}
++
++	//create kobject and a new struct kfile_desc
++	kobject_t *kobj = kmalloc_kobject(sizeof(struct kfile_desc));
++	kobj->flags = KTYPE_FILE;
++	fd = kobj->kobject;
++	fd->tfd = tfd;
++	fd->flags = flags;
++	fd->fp = 0;
++	fd->id = k_new_id ();
++	list_append(&open_files, fd, &fd->list);
++
++	//fill desc
++	desc->id = fd->id;
++	desc->ptr = kobj;
++
++	return 0;
++}
++
++int k_fs_close_file(descriptor_t *desc)
++{
++	struct kfile_desc *fd = last_check;
++	kobject_t *kobj;
++
++	kobj = desc->ptr;
++	/* - already tested!
++	if (!kobj || !list_find(&kobjects, &kobj->list))
++		return -EINVAL;
++
++	fd = kobj->kobject;
++	if (!fd || fd->id != desc->id)
++		return -EINVAL;
++	*/
++	if (!list_find_and_remove(&open_files, &fd->list))
++		return -EINVAL;
++
++	kfree_kobject ( kobj );
++
++	return 0;
++}
++
++//op = 0 => write, otherwise =>read
++int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
++{
++	//desc already checked, use "last_check";
++	struct kfile_desc *fd = last_check;
++
++	//sanity check
++	if ((op && (fd->flags & O_WRONLY)) || (!op && (fd->flags & O_RDONLY)))
++		return -EPERM;
++
++	if (op) {
++		//read from offset "fd->fp" to "buffer" "size" bytes
++
++		// possible scenarios: (#=block boundary)
++		// fp % block_size == 0
++		// #|fp|-----------#-----------#
++		//     | size |
++
++		// fp % block_size == 0
++		// #|fp|-----------#-----------#
++		//     |      size     |
++
++		// fp % block_size > 0
++		// #----|fp|-------#-----------#
++		//         |size|
++
++		// fp % block_size > 0
++		// #----|fp|-------#-----------#
++		//         |    size    |
++
++		//start with block x where address fd->fp is (x=fp/bsize)
++		//fd->tfd->block[x] has address of block on disk
++		//read that block and copy data from fd->fp to the end of block
++		//DISK_READ(buf, 1, fd->tfd->block[x]);
++		//which part of buf to buffer? ...
++		//read next block ...
++		//stop when all required data is read or end of the file is reached
++
++		//update "ta", fp
++		//return number of bytes read
++
++		//char buf[ft->block_size];
++		size_t todo = size;
++		//size_t block = fd->fp / ft->block_size;
++
++		//todo
++
++		return size - todo;
++	}
++	else {
++		//assume there is enough space on disk
++
++		//write ...
++		//if ...->block[x] == 0 => find free block on disk
++		//when fp isn't block start, read block from disk first
++		//and then replace fp+ bytes ... and then write block back
++
++		//char buf[ft->block_size];
++		size_t todo = size;
++		//size_t block = fd->fp / ft->block_size;
++		//size_t maxfilesize = ft->block_size * MAXFILEBLOCKS;
++
++		//todo
++
++		return size - todo;
++	}
++
++	return 0;
++}
+diff --git a/Chapter_05_Devices/03_Serial_port/kernel/fs.h b/Chapter_05_Devices/03_Serial_port/kernel/fs.h
+new file mode 100644
+index 0000000..c58c285
+--- /dev/null
++++ b/Chapter_05_Devices/03_Serial_port/kernel/fs.h
+@@ -0,0 +1,56 @@
++/*! Simple file system */
++#pragma once
++
++int k_fs_init(char *disk_device, size_t bsize, size_t blocks);
++int k_fs_is_file_open(descriptor_t *desc);
++int k_fs_open_file(char *pathname, int flags, mode_t mode, descriptor_t *desc);
++int k_fs_close_file(descriptor_t *desc);
++int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op);
++
++#ifdef _K_FS_C_
++
++#include <types/time.h>
++
++#define FS_TYPE		42 //any number will do :)
++#define KTYPE_FILE	(1<<10)
++
++#define MAXFILESONDISK	16
++#define MAXFILENAMESIZE	16
++#define MAXFILEBLOCKS	16
++
++struct fs_node {
++	char node_name[MAXFILENAMESIZE];
++	size_t id;      // position in file table
++	timespec_t tc;  // time of file creation
++	timespec_t ta;  // time of last access
++	timespec_t tm;  // time of last modification
++	size_t size;    // total size in bytes
++	size_t blocks;  // allocated blocks
++	size_t block[MAXFILEBLOCKS]; // where are blocks on disk
++} __attribute__((packed));
++
++struct fs_table {
++	int file_system_type;
++	char partition_name[MAXFILENAMESIZE];
++	size_t block_size;
++	size_t blocks;
++	size_t max_files;
++	struct fs_node fd[MAXFILESONDISK];
++	char free[1]; // bitmap would be better, but ...
++} __attribute__((packed));
++
++/* disk blocks:
++   0-X: [file_table] => sizeof(struct file_table)
++   X+1: free block or file content
++*/
++
++//open file descriptor
++struct kfile_desc {
++	id_t id;    // kernel object id
++	struct fs_node *tfd; //pointer to descriptor in file table in memory
++	int flags;
++	size_t fp; //file pointer, offset from beginning
++	list_h list;
++};
++
++#endif /* _K_FS_C_ */
+diff --git a/Chapter_05_Devices/03_Serial_port/kernel/startup.c b/Chapter_05_Devices/03_Serial_port/kernel/startup.c
+index 3f8b9fb..e078519 100644
+--- a/Chapter_05_Devices/03_Serial_port/kernel/startup.c
++++ b/Chapter_05_Devices/03_Serial_port/kernel/startup.c
+@@ -4,12 +4,14 @@
+ #include "time.h"
+ #include "device.h"
+ #include "memory.h"
++#include "fs.h"
+ #include <kernel/errno.h>
+ #include <kernel/features.h>
+ #include <arch/interrupt.h>
+ #include <arch/processor.h>
+ #include <api/stdio.h>
+ #include <api/prog_info.h>
++#include <lib/string.h>
+ 
+ char system_info[] = 	OS_NAME ": " NAME_MAJOR ":" NAME_MINOR ", "
+ 			"Version: " VERSION " (" ARCH ")";
+@@ -55,10 +57,27 @@ void k_startup()
+ 
+ 	stdio_init(); /* initialize standard input & output devices */
+ 
++	k_fs_init("DISK", 512, 4096);
++
++	int fd = open("file:test", O_CREAT | O_WRONLY, 0);
++	kprintf("fd=%d\n", fd);
++	int retval = write(fd, "neki tekst", 11);
++	kprintf("retval=%d\n", retval);
++	retval = close(fd);
++	kprintf("retval=%d\n", retval);
++
++	fd = open("file:test", O_RDONLY, 0);
++	kprintf("fd=%d\n", fd);
++	char buff[11];
++	retval = read(fd, buff, 11);
++	kprintf("retval=%d\n", retval);
++	kprintf("buff=%s\n", buff);
++
++
+ 	/* start desired program(s) */
+-	hello_world();
+-	keyboard();
+-	timer();
++	//hello_world();
++	//keyboard();
++	//timer();
+ 	/* segm_fault(); */
+ 
+ 	kprintf("\nSystem halted!\n");
