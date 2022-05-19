@@ -299,8 +299,10 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		}
 		fd->tfd->size=vel; //???
 		
-		for (int i = block; i < fd->tfd->size+block; i++)
+		for (int i = block; i < fd->tfd->size+block; i++) {
 			ft->free[i] = 0;
+			kprintf("Tu sam bb %d\n",block);
+		}	
 		DISK_WRITE(buf,fd->tfd->size,0);
 		return size - todo;
 	}
