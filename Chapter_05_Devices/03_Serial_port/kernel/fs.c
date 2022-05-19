@@ -272,9 +272,10 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 			nađi slobodni blok i ažuriraj blokovi_datoteke
 			ako nema stani i izađi iz petlje
 		}*/
-		if (fd->tfd->block[block]<=0) { //zasto -1?
+		while (ft->free[block]!=1) { //zasto -1?
 		//ovo ne znam
 		kprintf("Tu sam aa %d\n",block);
+		block++;
 	
 		}
 		
@@ -297,6 +298,9 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		vel=fd->tfd->size;
 		}
 		fd->tfd->size=vel; //???
+		
+		for (int i = block; i < fd->tfd->size+block; i++)
+			ft->free[i] = 0;
 		DISK_WRITE(buf,fd->tfd->size,0);
 		return size - todo;
 	}

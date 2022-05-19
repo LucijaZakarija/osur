@@ -31,7 +31,7 @@ int hello_world()
 
 	int fd = open("file:test", O_CREAT | O_WRONLY, 0);
 	kprintf("fd=%d\n", fd);
-	int retval = write(fd, "neki tekst", 11);
+	int retval = write(fd, "neki tekst ", 12);
 	kprintf("retval=%d\n", retval);
 	retval = close(fd);
 	kprintf("retval=%d\n", retval);
@@ -48,8 +48,8 @@ int hello_world()
 	
 	fd = open("file:test", O_RDONLY, 0);
 	kprintf("fd=%d\n", fd);
-	char buff[11];
-	retval = read(fd, buff, 11);
+	char buff[12];
+	retval = read(fd, buff, 12);
 	kprintf("retval=%d\n", retval);
 	kprintf("buff=%s\n", buff);
 	retval = close(fd);
