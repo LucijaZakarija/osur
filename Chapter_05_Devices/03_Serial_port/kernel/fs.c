@@ -286,7 +286,7 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		}
 		//kprintf("Tu sam23 %s\n",buffer);
 		strcpy(buf, buffer);
-		//kprintf("Tu sam23 %s\n",buf);
+		//kprintf("Tu sam23 %d\n",fd->tfd->block[block]);
 		buffer+=kopirati;
 		fd->fp+=kopirati;
 		todo-=kopirati;

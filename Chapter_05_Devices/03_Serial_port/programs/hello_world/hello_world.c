@@ -52,6 +52,7 @@ int hello_world()
 	retval = read(fd, buff, 11);
 	kprintf("retval=%d\n", retval);
 	kprintf("buff=%s\n", buff);
+	retval = close(fd);
 
 	fd2 = open("file:test2", O_RDONLY, 0);
 	kprintf("fd=%d\n", fd2);
@@ -59,6 +60,7 @@ int hello_world()
 	retval2 = read(fd2, buff2, 4);
 	kprintf("retval=%d\n", retval2);
 	kprintf("buff2=%s\n", buff2);
+	retval2 = close(fd2);
 
 	return 0;
 }
