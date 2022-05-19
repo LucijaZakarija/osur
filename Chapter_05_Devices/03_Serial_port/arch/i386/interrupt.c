@@ -203,6 +203,29 @@ void arch_interrupt_handler(int irq_num)
 			//list_t *list;
 			list_init(zahtjevi); //ili pokazivac??, ugl ne kontam bas jer on je otvarao masu lista
 			//list_append(list,zah); //je li ovako??
+			struct zahtjev *zah3;
+			zah3 = list_get (&zahtjevi[irq_num], FIRST);
+			
+			while (zah3) {
+			//LOG(ERROR, "interrupt zah3: %d\n",ih->prio);
+			if(zah3->obrada_u_tijeku==0 && zah3->handler->prio==ih->prio) {
+			list_find_and_remove(&zahtjevi[irq_num],&zah3->list);
+			zah->handler->prio=0;
+			LOG(ERROR, "interrupt zah4: %d\n",ih->prio);
+			
+			}
+			zah3 = list_get_next(&zah3->list);
+			}
+			
+			/*if(list_find(&zahtjevi[irq_num],&zah->list)!=NULL) {
+			   LOG(ERROR, "interrupt DD: %d\n",ih->prio);
+			   struct zahtjev *zah2;
+			   zah2=list_find(&zahtjevi[irq_num],&zah->list);
+			   if (zah2->obrada_u_tijeku!=1) {
+			       list_find_and_remove(&zahtjevi[irq_num],&zah2->list);
+			       zah->handler->prio=0;
+			   }
+			}*/
 			list_sort_add(&zahtjevi[irq_num], zah, &zah->list,gt_int);
 					
 		        //ASSERT(zah); //ali gdje?????
