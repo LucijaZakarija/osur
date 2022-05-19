@@ -217,11 +217,38 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		//return number of bytes read
 
 		//char buf[ft->block_size];
-		size_t todo = size;
+
 		//size_t block = fd->fp / ft->block_size;
 
 		//todo
+		
+		size_t vel = fd->tfd->size;
+		char buf[ft->block_size];//buffer
+		size_t todo = size;
+		size_t block = fd->fp / ft->block_size;
+		while(todo > 0 && fd->fp < vel && fd->tfd->block[block] >= 0){
+		//kprintf("Tu sam22 %d\n",size); u slj liniji ide u buffer
 
+		DISK_READ(buf, 1, fd->tfd->block[block]);
+		size_t kopirati = todo;
+		if(todo > vel - fd->fp){
+			kopirati = vel - fd->fp;
+		}
+		if(todo > ft->block_size - fd->fp % ft->block_size){
+			kopirati = ft->block_size - fd->fp % ft->block_size;
+
+		}
+		strcpy(buffer, buf);
+		//kprintf("Tu sam23 %s\n",buffer);
+		//kprintf("Tu sam23 %s\n",buf);
+		buffer+=kopirati;
+		fd->fp+=kopirati;
+		todo-=kopirati;
+
+		}  
+
+//todo
+		
 		return size - todo;
 	}
 	else {
@@ -232,13 +259,45 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		//when fp isn't block start, read block from disk first
 		//and then replace fp+ bytes ... and then write block back
 
-		//char buf[ft->block_size];
+		
 		size_t todo = size;
-		//size_t block = fd->fp / ft->block_size;
-		//size_t maxfilesize = ft->block_size * MAXFILEBLOCKS;
+		char buf[ft->block_size];
+		size_t block = fd->fp / ft->block_size;
+		size_t maxfilesize = ft->block_size * MAXFILEBLOCKS;
 
 		//todo
+		while(todo > 0 && fd->fp < maxfilesize){
+		//kprintf("Tu sam %d\n",size);
+			/*ako je blokovi_datoteke[blok_dat] == -1 {
+			nađi slobodni blok i ažuriraj blokovi_datoteke
+			ako nema stani i izađi iz petlje
+		}*/
+		if (fd->tfd->block[block]<=0) { //zasto -1?
+		//ovo ne znam
+		kprintf("Tu sam aa %d\n",block);
+	
+		}
+		
+		DISK_READ(buf, 1, fd->tfd->block[block]);//dohvati blok diska u buffer
+		size_t kopirati = todo;
+		if(todo > ft->block_size - fd->fp % ft->block_size){
+			kopirati = ft->block_size - fd->fp % ft->block_size;
 
+		}
+		//kprintf("Tu sam23 %s\n",buffer);
+		strcpy(buf, buffer);
+		//kprintf("Tu sam23 %s\n",buf);
+		buffer+=kopirati;
+		fd->fp+=kopirati;
+		todo-=kopirati;
+		
+		}
+		size_t vel=fd->fp;
+		if (vel<fd->tfd->size) {
+		vel=fd->tfd->size;
+		}
+		fd->tfd->size=vel; //???
+		DISK_WRITE(buf,fd->tfd->size,0);
 		return size - todo;
 	}
 
