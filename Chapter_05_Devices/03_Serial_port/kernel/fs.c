@@ -184,6 +184,9 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 	//sanity check
 	if ((op && (fd->flags & O_WRONLY)) || (!op && (fd->flags & O_RDONLY)))
 		return -EPERM;
+		
+	timespec_t current_time;
+	kclock_gettime(CLOCK_REALTIME, &current_time);
 
 	if (op) {
 		//read from offset "fd->fp" to "buffer" "size" bytes
@@ -221,26 +224,38 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		//size_t block = fd->fp / ft->block_size;
 
 		//todo
+		kprintf("Tu sam fd->fp cit%d\n",fd->fp);
+		kprintf("Tu sam fd->tfd->size cit%d\n",fd->tfd->size);
+		kprintf("Tu sam fd->tfd->block cit%d\n",fd->tfd->block[0]);
 		
 		size_t vel = fd->tfd->size;
+		fd->fp= fd->tfd->block[0];
+		fd->tfd->block[0]=0;
 		char buf[ft->block_size];//buffer
 		size_t todo = size;
 		size_t block = fd->fp / ft->block_size;
+		size_t pom=fd->fp;
+		//int poc=fd->fp % ft->block_size;
+		
+		kprintf("Tu saaaam %d\n",block);
 		while(todo > 0 && fd->fp < vel && fd->tfd->block[block] >= 0){
-		//kprintf("Tu sam22 %d\n",size); u slj liniji ide u buffer
+		kprintf("Tu samCitam %d\n",todo); //u slj liniji ide u buffer
 
-		DISK_READ(buf, 1, fd->tfd->block[block]);
+		DISK_READ(buf, 1, fd->fp); //ovo radi samo za osnovni slucaj
+		kprintf("Tu samm %s\n",buf);
+
 		size_t kopirati = todo;
 		if(todo > vel - fd->fp){
 			kopirati = vel - fd->fp;
+			
 		}
 		if(todo > ft->block_size - fd->fp % ft->block_size){
 			kopirati = ft->block_size - fd->fp % ft->block_size;
+			kprintf("Tu saaaam \n");
 
 		}
 		strcpy(buffer, buf);
-		//kprintf("Tu sam23 %s\n",buffer);
-		//kprintf("Tu sam23 %s\n",buf);
+                kprintf("Tu sam kopiram %s\n",buffer);
 		buffer+=kopirati;
 		fd->fp+=kopirati;
 		todo-=kopirati;
@@ -248,7 +263,8 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		}  
 
 //todo
-		
+		fd->tfd->block[0]=pom;
+		fd->tfd->ta=current_time;
 		return size - todo;
 	}
 	else {
@@ -275,11 +291,14 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		while (ft->free[block]!=1) { //zasto -1?
 		//ovo ne znam
 		kprintf("Tu sam aa %d\n",block);
+		//fd->fp++;
 		block++;
 	
 		}
 		
-		DISK_READ(buf, 1, fd->tfd->block[block]);//dohvati blok diska u buffer
+		DISK_READ(buf, 1, block);//dohvati blok diska u buffer
+		kprintf("Tu sam %s %d\n",buf,block);
+		//DISK_READ(buf, 1,block);
 		size_t kopirati = todo;
 		if(todo > ft->block_size - fd->fp % ft->block_size){
 			kopirati = ft->block_size - fd->fp % ft->block_size;
@@ -294,16 +313,26 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		
 		}
 		size_t vel=fd->fp;
+		kprintf("Tu sam fd->fp %d\n",fd->fp);
+		kprintf("Tu sam fd->tfd->size %d\n",fd->tfd->size);
 		if (vel<fd->tfd->size) {
 		vel=fd->tfd->size;
 		}
-		fd->tfd->size=vel; //???
-		
+		fd->tfd->size=vel+block; //???
+		fd->fp=fd->fp+block-size;
+		fd->tfd->block[0]=fd->fp;
+
 		for (int i = block; i < fd->tfd->size+block; i++) {
 			ft->free[i] = 0;
 			kprintf("Tu sam bb %d\n",block);
 		}	
-		DISK_WRITE(buf,fd->tfd->size,0);
+		//DISK_WRITE(buf,fd->tfd->size,0);
+		
+		DISK_WRITE(buf,1, block);
+		
+		fd->tfd->ta=current_time;
+		fd->tfd->tm=current_time;
+		
 		return size - todo;
 	}
 

@@ -31,7 +31,7 @@ int hello_world()
 
 	int fd = open("file:test", O_CREAT | O_WRONLY, 0);
 	kprintf("fd=%d\n", fd);
-	int retval = write(fd, "neki tekst ", 12);
+	int retval = write(fd, "lucy", 4);
 	kprintf("retval=%d\n", retval);
 	retval = close(fd);
 	kprintf("retval=%d\n", retval);
@@ -39,28 +39,45 @@ int hello_world()
 
 	
 	
-	int fd2 = open("file:test2", O_CREAT | O_WRONLY, 0);
-	kprintf("fd=%d\n", fd2);
-	int retval2 = write(fd2, "lala", 4);
-	kprintf("retval=%d\n", retval2);
-	retval2 = close(fd2);
-	kprintf("retval=%d\n", retval2);
+	 fd = open("file:test2", O_CREAT | O_WRONLY, 0);
+	kprintf("fd=%d\n", fd);
+	retval = write(fd, "b", 1);
+	kprintf("retval=%d\n", retval);
+	retval = close(fd);
+	kprintf("retval=%d\n", retval);
 	
 	fd = open("file:test", O_RDONLY, 0);
 	kprintf("fd=%d\n", fd);
-	char buff[12];
-	retval = read(fd, buff, 12);
+	char buff[4];
+	retval = read(fd, buff, 4);
 	kprintf("retval=%d\n", retval);
 	kprintf("buff=%s\n", buff);
-	retval = close(fd);
+	//retval = close(fd);
 
-	fd2 = open("file:test2", O_RDONLY, 0);
-	kprintf("fd=%d\n", fd2);
-	char buff2[4];
-	retval2 = read(fd2, buff2, 4);
-	kprintf("retval=%d\n", retval2);
+	fd = open("file:test2", O_RDONLY, 0);
+	kprintf("fd=%d\n", fd);
+	char buff2[1];
+	retval = read(fd, buff2, 1);
+	kprintf("retval=%d\n", retval);
 	kprintf("buff2=%s\n", buff2);
-	retval2 = close(fd2);
+	//retval = close(fd);
+	
+		
+	fd = open("file:test", O_RDONLY, 0);
+	kprintf("fd=%d\n", fd);
+
+	retval = read(fd, buff, 4);
+	kprintf("retval=%d\n", retval);
+	kprintf("buff=%s\n", buff);
+	//retval = close(fd);
+
+	fd = open("file:test2", O_RDONLY, 0);
+	kprintf("fd=%d\n", fd);
+
+	retval = read(fd, buff2, 1);
+	kprintf("retval=%d\n", retval);
+	kprintf("buff2=%s\n", buff2);
+	retval = close(fd);
 
 	return 0;
 }
