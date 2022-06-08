@@ -11,7 +11,7 @@ all: $(PROGRAM)
 CFLAGS += -D VAR1=$(VAR1) -D VAR2=$(VAR2)
 
 OBJEKTI = main.o # objekti koji se ovdje stvaraju
-MODULI = zivotinja/mod-zivotinja.o # objekti iz modula
+MODULI = zivotinja/mod-zivotinja.o nadoknada/mod-nadoknada.o # objekti iz modula novo
 
 $(PROGRAM): $(OBJEKTI) $(MODULI)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@

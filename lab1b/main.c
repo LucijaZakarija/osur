@@ -11,6 +11,7 @@ int main ()
 	funkcija_mjau ( "main 3" );
 	funkcija_pudl ( "main 4" );
 	funkcija_grr ( "main 5" );
+	nadoknada_lab1();
 
 	return 0;
 }

@@ -7,4 +7,5 @@ int funkcija_vau ( const char *prefiks );
 int funkcija_grr ( const char *prefiks );
 int funkcija_mjau ( const char *prefiks );
 int funkcija_pudl ( const char *prefiks );
+void nadoknada_lab1();
 
