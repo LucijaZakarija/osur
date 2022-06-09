@@ -237,7 +237,7 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		size_t pom=fd->fp;
 		//int poc=fd->fp % ft->block_size;
 		
-		kprintf("Tu saaaam i ovo je blok i vel  %d %d\n",block, ft->block_size);
+		kprintf("Tu saaaam i ovo je blok %d\n",block);
 		while(todo > 0 && fd->fp < vel && fd->tfd->block[block] >= 0){
 		kprintf("Tu samCitam %d\n",todo); //u slj liniji ide u buffer
 
@@ -255,7 +255,7 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 
 		}
 		strcpy(buffer, buf);
-                kprintf("Tu sam kopiram %s velicina %d todo %d vel %d\n",buffer,kopirati,todo,vel);
+                kprintf("Tu sam kopiram %s\n",buffer);
 		buffer+=kopirati;
 		fd->fp+=kopirati;
 		todo-=kopirati;
@@ -320,7 +320,6 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		}
 		fd->tfd->size=vel+block; //???
 		fd->fp=fd->fp+block-size;
-		kprintf("Tu sam block 0 %d\n",fd->tfd->block[0]);
 		fd->tfd->block[0]=fd->fp;
 
 		for (int i = block; i < fd->tfd->size+block; i++) {
@@ -339,4 +338,3 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 
 	return 0;
 }
-
