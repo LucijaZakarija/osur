@@ -10,5 +10,7 @@ uzela sam dio koda iz open u funkciji k_fs_wipe
 
 dosla sam do tfd i mogu procitati pravo ime filea, njegovu velicinu...
 napravila sam direktan write u buffer u zadnjem bloku filea, tj da tamo pise x
-nisam uspjela koristiti svoju funkciju read_write jer u njoj ne mogu "prepisati" blok nego samo nadopisati kako iteriram po feee[] polju
+nisam uspjela koristiti svoju funkciju read_write jer u njoj ne mogu "prepisati" blok nego samo nadopisati kako iteriram po fee polju
+isto tako nisam pozivala preko device.c pa nisam znala kako doći do desc
+
 
