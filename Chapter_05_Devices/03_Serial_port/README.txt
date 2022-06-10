@@ -13,4 +13,4 @@ napravila sam direktan write u buffer u zadnjem bloku filea, tj da tamo pise x
 nisam uspjela koristiti svoju funkciju read_write jer u njoj ne mogu "prepisati" blok nego samo nadopisati kako iteriram po fee polju
 isto tako nisam pozivala preko device.c pa nisam znala kako doći do desc
 
-
+ako je potrebno mogu kasnije probati napisati kod kako treba, sad nisam imala vremena.
