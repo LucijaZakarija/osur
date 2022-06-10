@@ -3,6 +3,7 @@
 #include <api/stdio.h>
 
 #include <kernel/device.h>
+#include <kernel/fs.h>
 #include <api/errno.h>
 #include <lib/string.h>
 
@@ -168,4 +169,18 @@ int poll(struct pollfd fds[], nfds_t nfds, int timeout)
 	}
 
 	return sys__poll(fds, nfds, timeout, std_desc);
+}
+
+
+
+int wipe(char *pathname)//NOVO
+{
+	int retval;
+
+	retval = k_fs_wipe(pathname);
+
+	if (retval)
+		return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
 }

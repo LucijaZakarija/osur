@@ -15,3 +15,4 @@ void warn(char *format, ...);
 int stdio_init();
 
 int poll(struct pollfd fds[], nfds_t nfds, int timeout);
+int wipe(char *pathname);

@@ -8,7 +8,6 @@ int k_fs_close_file(descriptor_t *desc);
 int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op);
 int k_fs_wipe(char *pathname);
 
-
 #ifdef _K_FS_C_
 
 #include <types/time.h>

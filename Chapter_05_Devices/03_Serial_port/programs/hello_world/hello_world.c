@@ -62,7 +62,12 @@ int hello_world()
 	kprintf("buff2=%s\n", buff2);
 	retval = close(fd);
 	
-		
+	printf("\n --- file2 wipe: ---\n\n");
+	retval = wipe("file:test2");
+	printf("wipe retval=%d\n", retval);
+	
+	
+	/*	
 	fd = open("file:test", O_RDONLY, 0);
 	kprintf("fd=%d\n", fd);
 
@@ -72,7 +77,7 @@ int hello_world()
 	retval = close(fd);
 
 	fd = open("file:test2", O_RDONLY, 0);
-	kprintf("fd=%d\n", fd);
+	kprintf("fd=%d\n", fd);*/
 
 	retval = read(fd, buff2, 1);
 	kprintf("retval=%d\n", retval);

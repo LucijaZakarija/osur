@@ -330,6 +330,7 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 		//DISK_WRITE(buf,fd->tfd->size,0);
 		
 		DISK_WRITE(buf,1, block);
+		kprintf("Tu sam AAAAAAAAAAAAAAAAAAAAa %d\n",block);
 		
 		fd->tfd->ta=current_time;
 		fd->tfd->tm=current_time;
@@ -338,5 +339,65 @@ int k_fs_read_write(descriptor_t *desc, void *buffer, size_t size, int op)
 	}
 
 	return 0;
+}
+
+
+int k_fs_wipe(char *pathname)
+{
+	struct fs_node *tfd = NULL;
+	char *fname = &pathname[5];
+
+	//check for conflicting flags
+	/*if (	((flags & O_RDONLY) && (flags & O_WRONLY)) ||
+		((flags & O_RDONLY) && (flags & O_RDWR))   ||
+		((flags & O_WRONLY) && (flags & O_RDWR))
+	)
+		return -EINVAL;*/
+
+	//check if file already open
+	struct kfile_desc *fd = list_get(&open_files, FIRST);
+	while (fd != NULL) {
+		if (strcmp(fd->tfd->node_name, fname) == 0) {
+			//already open!
+			//if its open for reading and O_RDONLY is set in flags
+				tfd = fd->tfd;//fine, save pointer to descriptor
+
+
+		}
+		fd = list_get_next(&fd->list);
+		kprintf("Tu sam aaa %d\n",fd->fp);
+	}
+
+	if (!tfd) {
+		//not already open; check if such file exists in file table
+		int i;
+		for (i = 0; i < ft->max_files; i++) {
+			if (strcmp(ft->fd[i].node_name, fname) == 0) {
+				tfd = &ft->fd[i];
+				break;
+			}
+		}
+	}
+	
+	        kprintf("Tu sam23 %d %d\n",tfd->size,fd->fp);
+	        //DISK_WRITE(ft, ft_size, 0);
+	        char buf[1]="x";
+	        int upisi=tfd->size - 1;
+	        
+	        DISK_WRITE(buf,1,upisi); 
+	       // k_fs_read_write(tfd, buf, 1,0);
+			//2. initialize descriptor
+		/*strcpy(tfd->node_name, fname);
+		tfd->id = i;
+		timespec_t t;
+		kclock_gettime (CLOCK_REALTIME, &t);
+		tfd->tc = tfd->ta = tfd->tm = t;
+		tfd->size = 0;
+		tfd->blocks = 0;*/
+                return 0;
+
+
+
+
 }
 
